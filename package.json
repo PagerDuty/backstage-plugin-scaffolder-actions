@@ -22,10 +22,8 @@
     "postpack": "backstage-cli package postpack"
   },
   "dependencies": {
-    "@backstage/backend-common": "^0.21.4",
     "@backstage/backend-defaults": "^0.2.16",
     "@backstage/backend-plugin-api": "^0.6.16",
-    "@backstage/config": "^1.2.0",
     "@backstage/plugin-scaffolder-node": "^0.4.2",
     "@rjsf/core": "^5.14.3",
     "node-fetch": "^2.6.7",
