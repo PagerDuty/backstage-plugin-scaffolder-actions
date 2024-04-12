@@ -10,7 +10,7 @@
     "types": "dist/index.d.ts"
   },
   "backstage": {
-    "role": "backend-plugin"
+    "role": "backend-plugin-module"
   },
   "scripts": {
     "start": "yarn tsc && backstage-cli package start",
@@ -22,8 +22,10 @@
     "postpack": "backstage-cli package postpack"
   },
   "dependencies": {
+    "@backstage/backend-common": "^0.21.6",
     "@backstage/backend-defaults": "^0.2.16",
     "@backstage/backend-plugin-api": "^0.6.16",
+    "@backstage/config": "^1.2.0",
     "@backstage/plugin-scaffolder-node": "^0.4.2",
     "@rjsf/core": "^5.14.3",
     "node-fetch": "^2.6.7",
