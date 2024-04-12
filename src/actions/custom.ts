@@ -2,8 +2,19 @@ import { createTemplateAction } from '@backstage/plugin-scaffolder-node';
 import { z } from 'zod';
 import * as api from '../apis/pagerduty';
 import { CreateServiceResponse } from '../types';
+import { loadAuthConfig } from '../auth/auth';
+import { LoggerService, RootConfigService } from '@backstage/backend-plugin-api';
+import { Config } from "@backstage/config";
+import { loadBackendConfig } from "@backstage/backend-common";
 
-export const createPagerDutyServiceAction = () => {
+export type CreatePagerDutyServiceActionProps = {
+    config: RootConfigService;
+    logger: LoggerService;
+};
+
+export const createPagerDutyServiceAction = (props : CreatePagerDutyServiceActionProps) => {
+
+    let loggerService: LoggerService;
 
     return createTemplateAction<{
         name: string;
@@ -27,15 +38,30 @@ export const createPagerDutyServiceAction = () => {
         },
 
         async handler(ctx) {
-            try {
+            try {                                
+                loggerService = props?.logger ? props.logger : ctx.logger;
+                const configService = props?.config ?? props.config;
+
+                const legacyConfig: Config = await loadBackendConfig({
+                    logger: loggerService,
+                    argv: [],
+                });
+
+                // Load the auth configuration
+                await loadAuthConfig({
+                    config: configService,  
+                    legacyConfig: legacyConfig,
+                    logger: loggerService,
+                });
+
                 // Create service in PagerDuty
                 const service: CreateServiceResponse = await api.createService(
                         ctx.input.name, 
                         ctx.input.description, 
                         ctx.input.escalationPolicyId, 
                         ctx.input.alertGrouping);
-                ctx.logger.info(`Service '${ctx.input.name}' created successfully!`);
-                ctx.logger.info(`Alert grouping set to '${service.alertGrouping}'`);
+                loggerService.info(`Service '${ctx.input.name}' created successfully!`);
+                loggerService.info(`Alert grouping set to '${service.alertGrouping}'`);
 
                 ctx.output('serviceUrl', service.url);
                 ctx.output('serviceId', service.id);
@@ -43,11 +69,11 @@ export const createPagerDutyServiceAction = () => {
                 // Create Backstage Integration in PagerDuty service
                 const backstageIntegrationId = 'PRO19CT'; // ID for Backstage integration
                 const integrationKey = await api.createServiceIntegration(service.id, backstageIntegrationId);
-                ctx.logger.info(`Backstage Integration for service '${ctx.input.name}' created successfully!`);
+                loggerService.info(`Backstage Integration for service '${ctx.input.name}' created successfully!`);
 
                 ctx.output('integrationKey', integrationKey);
             } catch (error) {
-                ctx.logger.error(`${error}`);
+                loggerService.error(`${error}`);
             }
 
         }

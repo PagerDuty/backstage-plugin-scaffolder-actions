@@ -1,65 +1,88 @@
 import { LoggerService, RootConfigService } from "@backstage/backend-plugin-api";
 import { HttpError } from "@pagerduty/backstage-plugin-common";
+import { Config } from "@backstage/config";
 
 type Auth = {
-    config: RootConfigService;
-    logger: LoggerService;
     authToken: string;
     authTokenExpiryDate: number;
 }
 
+export type LoadAuthConfigProps = {
+    config: RootConfigService;
+    legacyConfig: Config;
+    logger: LoggerService;
+}
+
+type JsonValue = boolean | number | string | null | JsonArray | JsonObject;
+
+interface JsonObject {
+    [x: string]: JsonValue;
+}
+
+type JsonArray = JsonValue[];
+
 let authPersistence: Auth;
+let isLegacyConfig: boolean;
+let _config: RootConfigService;
+let _legacyConfig: Config;
+let _logger: LoggerService;
 
 export async function getAuthToken(): Promise<string> {
     // check if token already exists and is valid
     if (
-        (authPersistence.authToken !== '' &&
-            authPersistence.authToken.includes('Bearer') &&
+        (authPersistence?.authToken?.includes('Bearer') &&
             authPersistence.authTokenExpiryDate > Date.now())  // case where OAuth token is still valid
         ||
-        (authPersistence.authToken !== '' &&
-            authPersistence.authToken.includes('Token'))) { // case where API token is used
+        (authPersistence?.authToken?.includes('Token'))) { // case where API token is used
         return authPersistence.authToken;
     }
 
-    await loadAuthConfig(authPersistence.config, authPersistence.logger);
+    await loadAuthConfig({
+        config: _config,
+        legacyConfig: _legacyConfig,
+        logger: _logger,
+    });
     return authPersistence.authToken;
 }
 
-export async function loadAuthConfig(config : RootConfigService, logger: LoggerService) {
+export async function loadAuthConfig({config, legacyConfig, logger}: LoadAuthConfigProps) {
     try {
+        // check if we are using new backend system. Fallback to legacy config if not
+        isLegacyConfig = !config;
+
+        // set config and logger
+        _config = config;
+        _legacyConfig = legacyConfig;
+        _logger = logger;
 
         // initiliaze the authPersistence in-memory object
         authPersistence = {
-            config,
-            logger,
             authToken: '',
             authTokenExpiryDate: Date.now()
         };
 
-        if (!config.getOptionalString('pagerDuty.apiToken')) {
+        if (!readOptionalString('pagerDuty.apiToken')) {
             logger.warn('No PagerDuty API token found in config file. Trying OAuth token instead...');
 
-            if (!config.getOptional('pagerDuty.oauth')) {
-                
+            if (!readOptionalObject('pagerDuty.oauth')) {
                 logger.error('No PagerDuty OAuth configuration found in config file.');
 
-            } else if (!config.getOptionalString('pagerDuty.oauth.clientId') || !config.getOptionalString('pagerDuty.oauth.clientSecret') || !config.getOptionalString('pagerDuty.oauth.subDomain')) {
+            } else if (!readOptionalString('pagerDuty.oauth.clientId') || !readOptionalString('pagerDuty.oauth.clientSecret') || !readOptionalString('pagerDuty.oauth.subDomain')) {
                 
                 logger.error("Missing required PagerDuty OAuth parameters in config file. 'clientId', 'clientSecret', and 'subDomain' are required. 'region' is optional.");
 
             } else {
 
                 authPersistence.authToken = await getOAuthToken(
-                    config.getString('pagerDuty.oauth.clientId'),
-                    config.getString('pagerDuty.oauth.clientSecret'),
-                    config.getString('pagerDuty.oauth.subDomain'),
-                    config.getOptionalString('pagerDuty.oauth.region') ?? 'us');
+                    readString('pagerDuty.oauth.clientId'),
+                    readString('pagerDuty.oauth.clientSecret'),
+                    readString('pagerDuty.oauth.subDomain'),
+                    readOptionalString('pagerDuty.oauth.region') ?? 'us');
 
                 logger.info('PagerDuty OAuth configuration loaded successfully.');
             }
         } else {
-            authPersistence.authToken = `Token token=${config.getString('pagerDuty.apiToken')}`;
+            authPersistence.authToken = `Token token=${readString('pagerDuty.apiToken')}`;
 
             logger.info('PagerDuty API token loaded successfully.');
         }
@@ -68,6 +91,31 @@ export async function loadAuthConfig(config : RootConfigService, logger: LoggerS
         logger.error(`Unable to retrieve valid PagerDuty AUTH configuration from config file: ${error}`);
     }
 }
+
+function readOptionalString(key: string) : string | undefined {
+    if (isLegacyConfig) {
+        return _legacyConfig.getOptionalString(key);
+    } 
+    
+    return _config.getOptionalString(key);
+}
+
+function readOptionalObject(key: string): JsonValue | undefined {
+    if (isLegacyConfig) {
+        return _legacyConfig.getOptional(key);
+    }
+
+    return _config.getOptional(key);
+}
+
+function readString(key: string) : string {
+    if (isLegacyConfig) {
+        return _legacyConfig.getString(key);
+    } 
+    
+    return _config.getString(key);
+}
+
 
 async function getOAuthToken(clientId: string, clientSecret: string, subDomain: string, region: string): Promise<string> {
     // check if required parameters are provided
