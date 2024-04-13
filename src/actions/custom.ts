@@ -12,7 +12,7 @@ export type CreatePagerDutyServiceActionProps = {
     logger: LoggerService;
 };
 
-export const createPagerDutyServiceAction = (props : CreatePagerDutyServiceActionProps) => {
+export const createPagerDutyServiceAction = (props? : CreatePagerDutyServiceActionProps) => {
 
     let loggerService: LoggerService;
 
@@ -40,7 +40,7 @@ export const createPagerDutyServiceAction = (props : CreatePagerDutyServiceActio
         async handler(ctx) {
             try {                                
                 loggerService = props?.logger ? props.logger : ctx.logger;
-                const configService = props?.config ?? props.config;
+                const configService = props?.config;
 
                 const legacyConfig: Config = await loadBackendConfig({
                     logger: loggerService,
