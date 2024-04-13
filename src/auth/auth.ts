@@ -8,7 +8,7 @@ type Auth = {
 }
 
 export type LoadAuthConfigProps = {
-    config: RootConfigService;
+    config: RootConfigService | undefined;
     legacyConfig: Config;
     logger: LoggerService;
 }
@@ -22,8 +22,7 @@ interface JsonObject {
 type JsonArray = JsonValue[];
 
 let authPersistence: Auth;
-let isLegacyConfig: boolean;
-let _config: RootConfigService;
+let _config: RootConfigService | undefined;
 let _legacyConfig: Config;
 let _logger: LoggerService;
 
@@ -47,9 +46,6 @@ export async function getAuthToken(): Promise<string> {
 
 export async function loadAuthConfig({config, legacyConfig, logger}: LoadAuthConfigProps) {
     try {
-        // check if we are using new backend system. Fallback to legacy config if not
-        isLegacyConfig = !config;
-
         // set config and logger
         _config = config;
         _legacyConfig = legacyConfig;
@@ -93,15 +89,16 @@ export async function loadAuthConfig({config, legacyConfig, logger}: LoadAuthCon
 }
 
 function readOptionalString(key: string) : string | undefined {
-    if (isLegacyConfig) {
+    if (!_config) {
         return _legacyConfig.getOptionalString(key);
-    } 
-    
+    }
+
     return _config.getOptionalString(key);
+
 }
 
 function readOptionalObject(key: string): JsonValue | undefined {
-    if (isLegacyConfig) {
+    if (!_config) {
         return _legacyConfig.getOptional(key);
     }
 
@@ -109,7 +106,7 @@ function readOptionalObject(key: string): JsonValue | undefined {
 }
 
 function readString(key: string) : string {
-    if (isLegacyConfig) {
+    if (!_config) {
         return _legacyConfig.getString(key);
     } 
     
