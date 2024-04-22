@@ -6,7 +6,7 @@ import { createPagerDutyServiceAction } from "./actions/custom";
 /** @public */
 export const pagerDutyScaffolderActions = createBackendModule({
     pluginId: 'scaffolder',
-    moduleId: 'custom-extensions',
+    moduleId: 'pagerduty-actions',
     register(env) {
         env.registerInit({
             deps: {
