@@ -1,5 +1,6 @@
 /* eslint-disable jest/no-conditional-expect */
-import { createService, createServiceIntegration } from "./pagerduty";
+import { PagerDutyAccountConfig } from "@pagerduty/backstage-plugin-common";
+import { createService, createServiceIntegration, getAccountByEscalationPolicyId, insertEndpointConfig, setFallbackEndpointConfig } from "./pagerduty";
 
 import { mocked } from "jest-mock";
 import fetch, { Response } from "node-fetch";
@@ -23,7 +24,19 @@ function mockedResponse(status: number, body: any): Promise<Response> {
     } as Response);
 }
 
-describe("PagerDuty API", () => {    
+describe("PagerDuty API", () => {
+    beforeAll(() => {
+
+        const mockAccount : PagerDutyAccountConfig = {
+            id: "testaccount",
+            apiBaseUrl: "https://mock.api.pagerduty.com",
+            eventsBaseUrl: "https://mock.events.pagerduty.com",
+        };
+
+        insertEndpointConfig(mockAccount);
+        setFallbackEndpointConfig(mockAccount);
+    });
+
     afterEach(() => {
         jest.clearAllMocks();
     });
@@ -51,7 +64,11 @@ describe("PagerDuty API", () => {
                     )
                 );
 
-            const result = await createService(name, description, escalationPolicyId, "intelligent");
+            const result = await createService({
+                name, 
+                description, 
+                escalationPolicyId, 
+                alertGrouping: "intelligent"});
 
             expect(result).toEqual(expectedResponse);
             expect(fetch).toHaveBeenCalledTimes(2);
@@ -75,7 +92,12 @@ describe("PagerDuty API", () => {
                 })
             );
 
-            const result = await createService(name, description, escalationPolicyId, "null");
+            const result = await createService({
+                name, 
+                description, 
+                escalationPolicyId, 
+                alertGrouping:"null"
+        });
 
             expect(result).toEqual(expectedResponse);
             expect(fetch).toHaveBeenCalledTimes(2);
@@ -94,7 +116,7 @@ describe("PagerDuty API", () => {
                 mockedResponse(201, { service: { id: "S3RV1CE1D", html_url: "https://testaccount.pagerduty.com/services/S3RV1CE1D" } })
             );
 
-            const result = await createService(name, description, escalationPolicyId);
+            const result = await createService({name, description, escalationPolicyId});
 
             expect(result).toEqual(expectedResponse);
             expect(fetch).toHaveBeenCalledTimes(2);
@@ -113,7 +135,7 @@ describe("PagerDuty API", () => {
                 mockedResponse(201, { service: { id: "S3RV1CE1D", html_url: "https://testaccount.pagerduty.com/services/S3RV1CE1D" } })
             );
 
-            const result = await createService(name, description, escalationPolicyId);
+            const result = await createService({name, description, escalationPolicyId});
 
             expect(result).toEqual(expectedResponse);
             expect(fetch).toHaveBeenCalledTimes(2);
@@ -131,7 +153,7 @@ describe("PagerDuty API", () => {
             );
 
             try {
-                await createService(name, description, escalationPolicyId);
+                await createService({name, description, escalationPolicyId});
             } catch (error) {
                 expect(((error as Error).message)).toEqual("Failed to create service. Caller provided invalid arguments.");
             }
@@ -149,7 +171,7 @@ describe("PagerDuty API", () => {
             );
 
             try {
-                await createService(name, description, escalationPolicyId);
+                await createService({name, description, escalationPolicyId});
             } catch (error) {
                 expect(((error as Error).message)).toEqual("Failed to create service. Caller did not supply credentials or did not provide the correct credentials.");
             }
@@ -169,7 +191,7 @@ describe("PagerDuty API", () => {
             );
 
             try {
-                await createService(name, description, escalationPolicyId);
+                await createService({name, description, escalationPolicyId});
             } catch (error) {
                 expect(((error as Error).message)).toEqual("Failed to create service. Account does not have the abilities to perform the action.");
             }
@@ -187,10 +209,37 @@ describe("PagerDuty API", () => {
             );
 
             try {
-                await createService(name, description, escalationPolicyId);
+                await createService({name, description, escalationPolicyId});
             } catch (error) {
                 expect(((error as Error).message)).toEqual("Failed to create service. Caller is not authorized to view the requested resource.");
             }
+        });
+
+        it.each(testInputs)("should get account from escalation policy id", async () => {
+            const escalationPolicyId = "12345";
+
+            mocked(fetch).mockReturnValueOnce(
+                mockedResponse(200, {
+                    escalation_policies: [
+                        {
+                            id: "12345",
+                            name: "Test Escalation Policy",
+                            summary: "Test Escalation Policy Summary",
+                            type: "escalation_policy",
+                        }
+                    ],
+                    limit: 50,
+                    offset: 0,
+                    total: 1,
+                    more: false,
+                })
+            );
+
+            
+            const account = await getAccountByEscalationPolicyId(escalationPolicyId);
+            
+            expect(account).toEqual("testaccount");
+            expect(fetch).toHaveBeenCalledTimes(1);
         });
     });
 
@@ -206,7 +255,7 @@ describe("PagerDuty API", () => {
             );
 
 
-            const result = await createServiceIntegration(serviceId, vendorId);
+            const result = await createServiceIntegration({serviceId, vendorId});
 
             expect(result).toEqual(expectedResponse);
             expect(fetch).toHaveBeenCalledTimes(1);
@@ -225,7 +274,7 @@ describe("PagerDuty API", () => {
             const expectedErrorMessage = "Failed to create service integration. Caller provided invalid arguments.";
 
             try {
-                await createServiceIntegration(serviceId, vendorId);
+                await createServiceIntegration({serviceId, vendorId});
             } catch (error) {
                 expect(((error as Error).message)).toEqual(expectedErrorMessage);
             }
@@ -242,7 +291,7 @@ describe("PagerDuty API", () => {
             const expectedErrorMessage = "Failed to create service integration. Caller did not supply credentials or did not provide the correct credentials.";
 
             try {
-                await createServiceIntegration(serviceId, vendorId);
+                await createServiceIntegration({serviceId, vendorId});
             } catch (error) {
                 expect(((error as Error).message)).toEqual(expectedErrorMessage);
             }
@@ -259,7 +308,7 @@ describe("PagerDuty API", () => {
             const expectedErrorMessage = "Failed to create service integration. Caller is not authorized to view the requested resource.";
 
             try {
-                await createServiceIntegration(serviceId, vendorId);
+                await createServiceIntegration({serviceId, vendorId});
             } catch (error) {
                 expect(((error as Error).message)).toEqual(expectedErrorMessage);
             }
@@ -276,7 +325,7 @@ describe("PagerDuty API", () => {
             const expectedErrorMessage = "Failed to create service integration. Rate limit exceeded.";
 
             try {
-                await createServiceIntegration(serviceId, vendorId);
+                await createServiceIntegration({serviceId, vendorId});
             } catch (error) {
                 expect(((error as Error).message)).toEqual(expectedErrorMessage);
             }
