@@ -6,6 +6,7 @@ import { loadAuthConfig } from '../auth/auth';
 import { LoggerService, RootConfigService } from '@backstage/backend-plugin-api';
 import { Config } from "@backstage/config";
 import { loadBackendConfig } from "@backstage/backend-common";
+import { loadPagerDutyEndpointsFromConfig, getAccountByEscalationPolicyId } from '../apis/pagerduty';
 
 export type CreatePagerDutyServiceActionProps = {
     config: RootConfigService;
@@ -54,11 +55,22 @@ export const createPagerDutyServiceAction = (props? : CreatePagerDutyServiceActi
                     logger: loggerService,
                 });
 
+                // Load endpoint configuration
+                loadPagerDutyEndpointsFromConfig({
+                    config: configService,
+                    legacyConfig: legacyConfig,
+                    logger: loggerService,
+                });
+
+                const account: string = await getAccountByEscalationPolicyId(ctx.input.escalationPolicyId);
+
                 // Create service in PagerDuty
+                loggerService.info(`Creating service '${ctx.input.name}' in account '${account}'.`);
                 const service: CreateServiceResponse = await api.createService(
                         ctx.input.name, 
                         ctx.input.description, 
                         ctx.input.escalationPolicyId, 
+                        account,
                         ctx.input.alertGrouping);
                 loggerService.info(`Service '${ctx.input.name}' created successfully!`);
                 loggerService.info(`Alert grouping set to '${service.alertGrouping}'`);
@@ -68,7 +80,14 @@ export const createPagerDutyServiceAction = (props? : CreatePagerDutyServiceActi
 
                 // Create Backstage Integration in PagerDuty service
                 const backstageIntegrationId = 'PRO19CT'; // ID for Backstage integration
-                const integrationKey = await api.createServiceIntegration(service.id, backstageIntegrationId);
+
+                loggerService.info(`Creating Backstage Integration for service '${ctx.input.name}' in account '${account}'.`);
+
+                const integrationKey = await api.createServiceIntegration(
+                    service.id, 
+                    backstageIntegrationId,
+                    account
+                );
                 loggerService.info(`Backstage Integration for service '${ctx.input.name}' created successfully!`);
 
                 ctx.output('integrationKey', integrationKey);
