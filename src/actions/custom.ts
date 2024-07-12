@@ -6,13 +6,14 @@ import { loadAuthConfig } from '../auth/auth';
 import { LoggerService, RootConfigService } from '@backstage/backend-plugin-api';
 import { Config } from "@backstage/config";
 import { loadBackendConfig } from "@backstage/backend-common";
+import { loadPagerDutyEndpointsFromConfig, getAccountByEscalationPolicyId } from '../apis/pagerduty';
 
 export type CreatePagerDutyServiceActionProps = {
     config: RootConfigService;
     logger: LoggerService;
 };
 
-export const createPagerDutyServiceAction = (props? : CreatePagerDutyServiceActionProps) => {
+export const createPagerDutyServiceAction = (props?: CreatePagerDutyServiceActionProps) => {
 
     let loggerService: LoggerService;
 
@@ -38,7 +39,7 @@ export const createPagerDutyServiceAction = (props? : CreatePagerDutyServiceActi
         },
 
         async handler(ctx) {
-            try {                                
+            try {
                 loggerService = props?.logger ? props.logger : ctx.logger;
                 const configService = props?.config;
 
@@ -49,17 +50,29 @@ export const createPagerDutyServiceAction = (props? : CreatePagerDutyServiceActi
 
                 // Load the auth configuration
                 await loadAuthConfig({
-                    config: configService,  
+                    config: configService,
                     legacyConfig: legacyConfig,
                     logger: loggerService,
                 });
 
+                // Load endpoint configuration
+                loadPagerDutyEndpointsFromConfig({
+                    config: configService,
+                    legacyConfig: legacyConfig,
+                    logger: loggerService,
+                });
+
+                const account: string = await getAccountByEscalationPolicyId(ctx.input.escalationPolicyId);
+
                 // Create service in PagerDuty
-                const service: CreateServiceResponse = await api.createService(
-                        ctx.input.name, 
-                        ctx.input.description, 
-                        ctx.input.escalationPolicyId, 
-                        ctx.input.alertGrouping);
+                loggerService.info(`Creating service '${ctx.input.name}' in account '${account}'.`);
+                const service: CreateServiceResponse = await api.createService({
+                    name: ctx.input.name,
+                    description: ctx.input.description,
+                    escalationPolicyId: ctx.input.escalationPolicyId,
+                    account: account,
+                    alertGrouping: ctx.input.alertGrouping
+                });
                 loggerService.info(`Service '${ctx.input.name}' created successfully!`);
                 loggerService.info(`Alert grouping set to '${service.alertGrouping}'`);
 
@@ -68,7 +81,14 @@ export const createPagerDutyServiceAction = (props? : CreatePagerDutyServiceActi
 
                 // Create Backstage Integration in PagerDuty service
                 const backstageIntegrationId = 'PRO19CT'; // ID for Backstage integration
-                const integrationKey = await api.createServiceIntegration(service.id, backstageIntegrationId);
+
+                loggerService.info(`Creating Backstage Integration for service '${ctx.input.name}' in account '${account}'.`);
+
+                const integrationKey = await api.createServiceIntegration({
+                    serviceId: service.id,
+                    vendorId: backstageIntegrationId,
+                    account
+                });
                 loggerService.info(`Backstage Integration for service '${ctx.input.name}' created successfully!`);
 
                 ctx.output('integrationKey', integrationKey);
