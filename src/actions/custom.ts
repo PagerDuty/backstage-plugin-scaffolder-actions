@@ -13,7 +13,7 @@ export type CreatePagerDutyServiceActionProps = {
     logger: LoggerService;
 };
 
-export const createPagerDutyServiceAction = (props? : CreatePagerDutyServiceActionProps) => {
+export const createPagerDutyServiceAction = (props?: CreatePagerDutyServiceActionProps) => {
 
     let loggerService: LoggerService;
 
@@ -39,7 +39,7 @@ export const createPagerDutyServiceAction = (props? : CreatePagerDutyServiceActi
         },
 
         async handler(ctx) {
-            try {                                
+            try {
                 loggerService = props?.logger ? props.logger : ctx.logger;
                 const configService = props?.config;
 
@@ -50,7 +50,7 @@ export const createPagerDutyServiceAction = (props? : CreatePagerDutyServiceActi
 
                 // Load the auth configuration
                 await loadAuthConfig({
-                    config: configService,  
+                    config: configService,
                     legacyConfig: legacyConfig,
                     logger: loggerService,
                 });
@@ -66,12 +66,13 @@ export const createPagerDutyServiceAction = (props? : CreatePagerDutyServiceActi
 
                 // Create service in PagerDuty
                 loggerService.info(`Creating service '${ctx.input.name}' in account '${account}'.`);
-                const service: CreateServiceResponse = await api.createService(
-                        ctx.input.name, 
-                        ctx.input.description, 
-                        ctx.input.escalationPolicyId, 
-                        account,
-                        ctx.input.alertGrouping);
+                const service: CreateServiceResponse = await api.createService({
+                    name: ctx.input.name,
+                    description: ctx.input.description,
+                    escalationPolicyId: ctx.input.escalationPolicyId,
+                    account: account,
+                    alertGrouping: ctx.input.alertGrouping
+                });
                 loggerService.info(`Service '${ctx.input.name}' created successfully!`);
                 loggerService.info(`Alert grouping set to '${service.alertGrouping}'`);
 
@@ -83,11 +84,11 @@ export const createPagerDutyServiceAction = (props? : CreatePagerDutyServiceActi
 
                 loggerService.info(`Creating Backstage Integration for service '${ctx.input.name}' in account '${account}'.`);
 
-                const integrationKey = await api.createServiceIntegration(
-                    service.id, 
-                    backstageIntegrationId,
+                const integrationKey = await api.createServiceIntegration({
+                    serviceId: service.id,
+                    vendorId: backstageIntegrationId,
                     account
-                );
+                });
                 loggerService.info(`Backstage Integration for service '${ctx.input.name}' created successfully!`);
 
                 ctx.output('integrationKey', integrationKey);

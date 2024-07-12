@@ -45,6 +45,20 @@ let _config: RootConfigService | undefined;
 let _legacyConfig: Config;
 let _logger: LoggerService;
 
+export function setFallbackEndpointConfig(account: PagerDutyAccountConfig) {
+    fallbackEndpointConfig = {
+        eventsBaseUrl: account.eventsBaseUrl !== undefined ? account.eventsBaseUrl : 'https://events.pagerduty.com/v2',
+        apiBaseUrl: account.apiBaseUrl !== undefined ? account.apiBaseUrl : 'https://api.pagerduty.com'
+    };
+}
+
+export function insertEndpointConfig(account: PagerDutyAccountConfig) {
+    EndpointConfig[account.id] = {
+        eventsBaseUrl: account.eventsBaseUrl !== undefined ? account.eventsBaseUrl : 'https://events.pagerduty.com/v2',
+        apiBaseUrl: account.apiBaseUrl !== undefined ? account.apiBaseUrl : 'https://api.pagerduty.com'
+    };
+}
+
 export function loadPagerDutyEndpointsFromConfig({config, legacyConfig, logger} : LoadEndpointConfigProps) {
 
     // set config and logger
@@ -70,16 +84,10 @@ export function loadPagerDutyEndpointsFromConfig({config, legacyConfig, logger} 
             accounts?.forEach((account) => {
 
                 if (account.isDefault) {
-                    fallbackEndpointConfig = {
-                        eventsBaseUrl: account.eventsBaseUrl !== undefined ? account.eventsBaseUrl : 'https://events.pagerduty.com/v2',
-                        apiBaseUrl: account.apiBaseUrl !== undefined ? account.apiBaseUrl : 'https://api.pagerduty.com'
-                    };
+                    setFallbackEndpointConfig(account);
                 }
 
-                EndpointConfig[account.id] = {
-                    eventsBaseUrl: account.eventsBaseUrl !== undefined ? account.eventsBaseUrl : 'https://events.pagerduty.com/v2',
-                    apiBaseUrl: account.apiBaseUrl !== undefined ? account.apiBaseUrl : 'https://api.pagerduty.com'
-                };
+                insertEndpointConfig(account);
             });
         }
     }
@@ -94,7 +102,7 @@ export function loadPagerDutyEndpointsFromConfig({config, legacyConfig, logger} 
     }
 }
 
-function getApiBaseUrl(account?: string): string {
+export function getApiBaseUrl(account?: string): string {
     if (isLegacyConfig === true) {
         return EndpointConfig.default.apiBaseUrl;
     }
@@ -106,8 +114,16 @@ function getApiBaseUrl(account?: string): string {
     return fallbackEndpointConfig.apiBaseUrl;
 }
 
+export type CreateServiceProps = {
+    name: string;
+    description: string;
+    escalationPolicyId: string;
+    account?: string;
+    alertGrouping?: string;
+}
+
 // Supporting custom actions
-export async function createService(name: string, description: string, escalationPolicyId: string, account?: string, alertGrouping?: string): Promise<CreateServiceResponse> {
+export async function createService({name, description, escalationPolicyId, account, alertGrouping} : CreateServiceProps): Promise<CreateServiceResponse> {
     let alertGroupingParameters = "null";
     let response: Response;
 
@@ -231,22 +247,17 @@ export async function createService(name: string, description: string, escalatio
     try {
         response = await fetch(baseUrl, options);
     } catch (error) {
-        _logger.error(`Failed to create service: ${error}`);
         throw new Error(`Failed to create service: ${error}`);
     }
 
     switch (response.status) {
         case 400:
-            _logger.error(`Failed to create service. Caller provided invalid arguments.`);
             throw new Error(`Failed to create service. Caller provided invalid arguments.`);
         case 401:
-            _logger.error(`Failed to create service. Caller did not supply credentials or did not provide the correct credentials.`);
             throw new Error(`Failed to create service. Caller did not supply credentials or did not provide the correct credentials.`);
         case 402:
-            _logger.error(`Failed to create service. Account does not have the abilities to perform the action.`);
             throw new Error(`Failed to create service. Account does not have the abilities to perform the action.`);
         case 403:
-            _logger.error(`Failed to create service. Caller is not authorized to view the requested resource.`);
             throw new Error(`Failed to create service. Caller is not authorized to view the requested resource.`);
         default: // 201
             break;
@@ -265,12 +276,17 @@ export async function createService(name: string, description: string, escalatio
         return createServiceResult;
 
     } catch (error) {
-        _logger.error(`Failed to parse service information: ${error}`);
         throw new Error(`Failed to parse service information: ${error}`);
     }
 }
 
-export async function createServiceIntegration(serviceId: string, vendorId: string, account?: string): Promise<string> {
+export type CreateServiceIntegrationProps = {
+    serviceId: string;
+    vendorId: string;
+    account?: string;
+}
+
+export async function createServiceIntegration({serviceId, vendorId, account} : CreateServiceIntegrationProps): Promise<string> {
     let response: Response;
 
     const apiBaseUrl = getApiBaseUrl(account);
@@ -302,22 +318,17 @@ export async function createServiceIntegration(serviceId: string, vendorId: stri
     try {
         response = await fetch(`${baseUrl}/${serviceId}/integrations`, options);
     } catch (error) {
-        _logger.error(`Failed to create service integration: ${error}`);
-        throw new Error(`Failed to create service: ${error}`);
+        throw new Error(`Failed to create service integration: ${error}`);
     }
 
     switch (response.status) {
         case 400:
-            _logger.error(`Failed to create service integration. Caller provided invalid arguments.`);
             throw new Error(`Failed to create service integration. Caller provided invalid arguments.`);
         case 401:
-            _logger.error(`Failed to create service integration. Caller did not supply credentials or did not provide the correct credentials.`);
             throw new Error(`Failed to create service integration. Caller did not supply credentials or did not provide the correct credentials.`);
         case 403:
-            _logger.error(`Failed to create service integration. Caller is not authorized to view the requested resource.`);
             throw new Error(`Failed to create service integration. Caller is not authorized to view the requested resource.`);
         case 429:
-            _logger.error(`Failed to create service integration. Rate limit exceeded.`);
             throw new Error(`Failed to create service integration. Rate limit exceeded.`);
         default: // 201
             break;
@@ -330,7 +341,6 @@ export async function createServiceIntegration(serviceId: string, vendorId: stri
         return result.integration.integration_key ?? '';
 
     } catch (error) {
-        _logger.error(`Failed to parse service information: ${error}`);
         throw new Error(`Failed to parse service information: ${error}`);
     }
 }
@@ -352,19 +362,15 @@ export async function isEventNoiseReductionEnabled(account?: string): Promise<bo
     try {
         response = await fetch(`${baseUrl}/abilities`, options);
     } catch (error) {
-        _logger.error(`Failed to read abilities: ${error}`);
         throw new Error(`Failed to read abilities: ${error}`);
     }
 
     switch (response.status) {
         case 401:
-            _logger.error(`Failed to read abilities. Caller did not supply credentials or did not provide the correct credentials.`);
             throw new Error(`Failed to read abilities. Caller did not supply credentials or did not provide the correct credentials.`);
         case 403:
-            _logger.error(`Failed to read abilities. Caller is not authorized to view the requested resource.`);
             throw new Error(`Failed to read abilities. Caller is not authorized to view the requested resource.`);
         case 429:
-            _logger.error(`Failed to read abilities. Rate limit exceeded.`);
             throw new Error(`Failed to read abilities. Rate limit exceeded.`);
         default: // 200
             break;
@@ -382,7 +388,6 @@ export async function isEventNoiseReductionEnabled(account?: string): Promise<bo
         return false;
 
     } catch (error) {
-        _logger.error(`Failed to parse abilities information: ${error}`);
         throw new Error(`Failed to parse abilities information: ${error}`);
     }
 }
@@ -393,7 +398,6 @@ function readOptionalString(key: string): string | undefined {
     }
 
     return _config.getOptionalString(key);
-
 }
 
 function readOptionalObject(key: string): JsonValue | undefined {
@@ -439,22 +443,17 @@ async function getEscalationPolicies(offset: number, limit: number, account?: st
     try {
         response = await fetch(`${baseUrl}?${params}`, options);
     } catch (error) {
-        _logger.error(`Failed to retrieve escalation policies: ${error}`);
         throw new Error(`Failed to retrieve escalation policies: ${error}`);
     }
 
     switch (response.status) {
         case 400:
-            _logger.error(`Failed to list escalation policies. Caller provided invalid arguments.`);
             throw new HttpError("Failed to list escalation policies. Caller provided invalid arguments.", 400);
         case 401:
-            _logger.error(`Failed to list escalation policies. Caller did not supply credentials or did not provide the correct credentials.`)
             throw new HttpError("Failed to list escalation policies. Caller did not supply credentials or did not provide the correct credentials.", 401);
         case 403:
-            _logger.error(`Failed to list escalation policies. Caller is not authorized to view the requested resource.`);
             throw new HttpError("Failed to list escalation policies. Caller is not authorized to view the requested resource.", 403);
         case 429:
-            _logger.error(`Failed to list escalation policies. Rate limit exceeded.`);
             throw new HttpError("Failed to list escalation policies. Rate limit exceeded.", 429);
         default: // 200
             break;
@@ -467,7 +466,6 @@ async function getEscalationPolicies(offset: number, limit: number, account?: st
         return [result.more ?? false, result.escalation_policies];
 
     } catch (error) {
-        _logger.error(`Failed to parse escalation policy information: ${error}`);
         throw new HttpError(`Failed to parse escalation policy information: ${error}`, 500);
     }
 }
