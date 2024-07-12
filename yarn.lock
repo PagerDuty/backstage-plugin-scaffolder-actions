@@ -4853,6 +4853,7 @@ __metadata:
     "@pagerduty/backstage-plugin-common": 0.2.0
     "@rjsf/core": ^5.14.3
     "@rjsf/utils": ^5.19.3
+    "@types/jest": ^29.5.12
     "@types/node": ^20.9.2
     "@types/node-fetch": 2.6.11
     "@types/supertest": ^2.0.12
@@ -6910,7 +6911,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/jest@npm:^29.5.11":
+"@types/jest@npm:^29.5.11, @types/jest@npm:^29.5.12":
   version: 29.5.12
   resolution: "@types/jest@npm:29.5.12"
   dependencies:
