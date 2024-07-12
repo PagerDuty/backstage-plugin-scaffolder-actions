@@ -78,6 +78,7 @@ export const createPagerDutyServiceAction = (props?: CreatePagerDutyServiceActio
 
                 ctx.output('serviceUrl', service.url);
                 ctx.output('serviceId', service.id);
+                ctx.output('account', account);
 
                 // Create Backstage Integration in PagerDuty service
                 const backstageIntegrationId = 'PRO19CT'; // ID for Backstage integration
