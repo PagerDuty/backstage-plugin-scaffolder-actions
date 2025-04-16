@@ -9,6 +9,9 @@ node_modules/
 !.yarn/versions
 install-state.gz
 
+# Build output
+dist*
+
 # Node version directives
 .nvmrc
 
@@ -17,3 +20,4 @@ install-state.gz
 *.iml
 .DS_Store
 .vscode
+
