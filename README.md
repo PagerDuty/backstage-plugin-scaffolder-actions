@@ -13,14 +13,13 @@ The PagerDuty Scaffolder Actions package allows users to create services in Page
 
 - **Scaffolder Action for creating services** This feature enables teams to create project templates that automatically generate a corresponding service in PagerDuty. These services come with a built-in integration to Backstage, which conveniently configures the frontend plugin for your service.
 
-
 ## Getting Started
 
 Find the complete project's documentation [here](https://pagerduty.github.io/backstage-plugin-docs/).
 
 ### Installation
 
-The installation of the PagerDuty plugin for Backstage is done with *yarn* as all other plugins in Backstage. This plugin follows a modular approach which means that every individual component will be a separate package (e.g. frontend, backend, common). In this case, you are installing a **backend plugin**.
+The installation of the PagerDuty plugin for Backstage is done with _yarn_ as all other plugins in Backstage. This plugin follows a modular approach which means that every individual component will be a separate package (e.g. frontend, backend, common). In this case, you are installing a **backend plugin**.
 
 To install this plugin run the following command from the Backstage root folder.
 
@@ -39,4 +38,3 @@ If you need help with this plugin, please open an issue in [GitHub](https://gith
 ## Contributing
 
 If you are interested in contributing to this project, please refer to our [Contributing Guidelines](https://github.com/PagerDuty/backstage-plugin-backend/blob/main/CONTRIBUTING.md).
-

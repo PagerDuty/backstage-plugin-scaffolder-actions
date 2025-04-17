@@ -27,12 +27,14 @@
     "test": "backstage-cli package test",
     "clean": "backstage-cli package clean",
     "prepack": "backstage-cli package prepack",
-    "postpack": "backstage-cli package postpack"
+    "postpack": "backstage-cli package postpack",
+    "prettier:check": "prettier --check ."
   },
   "dependencies": {
     "@backstage/backend-common": "^0.23.2",
     "@backstage/backend-defaults": "^0.3.3",
     "@backstage/backend-plugin-api": "^0.6.21",
+    "@backstage/backend-test-utils": "^1.3.1",
     "@backstage/config": "^1.2.0",
     "@backstage/plugin-scaffolder-node": "^0.4.7",
     "@pagerduty/backstage-plugin-common": "0.2.0",
@@ -46,6 +48,7 @@
   },
   "devDependencies": {
     "@backstage/cli": "^0.26.10",
+    "@spotify/prettier-config": "^15.0.0",
     "@types/jest": "^29.5.12",
     "@types/node": "^20.9.2",
     "@types/node-fetch": "2.6.11",
@@ -53,9 +56,11 @@
     "@types/webpack-env": "1.18.4",
     "jest-mock": "29.7.0",
     "msw": "^1.0.0",
+    "prettier": "^3.5.3",
     "supertest": "^6.2.4",
-    "typescript": "^4.8.4"
+    "typescript": "^5.0.0"
   },
+  "prettier": "@spotify/prettier-config",
   "files": [
     "dist",
     "config.d.ts"
