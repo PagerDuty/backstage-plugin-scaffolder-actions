@@ -4,21 +4,20 @@
 
 ## **Did you find a bug?**
 
-* **Do not open up a GitHub issue if the bug is a security vulnerability**, and instead send us an [email](mailto:open-source@pagerduty.com).
+- **Do not open up a GitHub issue if the bug is a security vulnerability**, and instead send us an [email](mailto:open-source@pagerduty.com).
 
-* **Ensure the bug was not already reported** by searching on GitHub's [issues](https://github.com/pagerduty/backstage-plugin/issues) page.
+- **Ensure the bug was not already reported** by searching on GitHub's [issues](https://github.com/pagerduty/backstage-plugin/issues) page.
 
-* If you're unable to find an open issue addressing the problem, [open a new one](https://github.com/PagerDuty/backstage-plugin/issues/new?labels=bug&projects=&template=bug_report.md). **Use the bug template.**
+- If you're unable to find an open issue addressing the problem, [open a new one](https://github.com/PagerDuty/backstage-plugin/issues/new?labels=bug&projects=&template=bug_report.md). **Use the bug template.**
 
 ## **Do you intend to add a new feature or change an existing one?**
 
-* Check for a similar feature request on the [issues](https://github.com/pagerduty/backstage-plugin/issues) page.
-  
-* If you can't find it, open an issue on GitHub using the [Feature Request](https://github.com/PagerDuty/backstage-plugin/issues/new?assignees=&labels=enhancement&projects=&template=feature_request.md&title=) template.
+- Check for a similar feature request on the [issues](https://github.com/pagerduty/backstage-plugin/issues) page.
+- If you can't find it, open an issue on GitHub using the [Feature Request](https://github.com/PagerDuty/backstage-plugin/issues/new?assignees=&labels=enhancement&projects=&template=feature_request.md&title=) template.
 
-* Provide as much details as possible so the request can be analysed by the team.
+- Provide as much details as possible so the request can be analysed by the team.
 
-* If you aren't sure about the feature you are about to request use Backstage's [Discord](https://discord.gg/backstage-687207715902193673) server to collect feedback from the Community first or reach out on [PagerDuty Community Forum](https://community.pagerduty.com).
+- If you aren't sure about the feature you are about to request use Backstage's [Discord](https://discord.gg/backstage-687207715902193673) server to collect feedback from the Community first or reach out on [PagerDuty Community Forum](https://community.pagerduty.com).
 
 > Note: Features will be reviewed by the core team and discussed with the contributor. Different factors may cause features to be rejected or postponed.
 
@@ -46,29 +45,29 @@ Another way to collect feedback on a new feature request is to use Backstage's [
 
 Do your thing but please make sure you follow the rules:
 
-* Work against the latest source on the **next** branch. This will allow maintainers to publish pre-release versions with changes before releasing a stable version.
-* Try to maintain a single feature/bugfix per pull request. It's okay to introduce a little bit of housekeeping changes along the way, but try to avoid conflating multiple features. Eventually, all these are going to go into a single commit, so you can use that to frame your scope.
-* Add **unit tests** that test your changes when applicable. This is especially important for new features and bug fixes, as it helps you to make sure that your changes are working as intended.
-* Lint and test the code. Pull request builds will run the same checks as well.
-* Follow conventional commits gudelines.
+- Work against the latest source on the **next** branch. This will allow maintainers to publish pre-release versions with changes before releasing a stable version.
+- Try to maintain a single feature/bugfix per pull request. It's okay to introduce a little bit of housekeeping changes along the way, but try to avoid conflating multiple features. Eventually, all these are going to go into a single commit, so you can use that to frame your scope.
+- Add **unit tests** that test your changes when applicable. This is especially important for new features and bug fixes, as it helps you to make sure that your changes are working as intended.
+- Lint and test the code. Pull request builds will run the same checks as well.
+- Follow conventional commits gudelines.
 
-    >**Note:** Maintainers use a [Visual Studio Code extension](https://marketplace.visualstudio.com/items?itemName=vivaxy.vscode-conventional-commits) to simplify the enforcement of [conventional commits](https://www.conventionalcommits.org).
-    >
-    > There is also a pre-commit hook configured to prevent not doing so.
+  > **Note:** Maintainers use a [Visual Studio Code extension](https://marketplace.visualstudio.com/items?itemName=vivaxy.vscode-conventional-commits) to simplify the enforcement of [conventional commits](https://www.conventionalcommits.org).
+  >
+  > There is also a pre-commit hook configured to prevent not doing so.
 
 ### Step 4: Pull Request
 
 Once you're done with your changes, you can open a pull request. Make sure to follow the checklist inside the pull request template.
 
 Create a commit with your changes and push them to a new branch/fork then create a [pull request on GitHub](https://docs.github.com/en/github/collaborating-with-pull-requests/proposing-changes-to-your-work-with-pull-requests/creating-a-pull-request-from-a-fork).
-  
-  > **Note:** Core members can push directly to a branch on the repo (following the same conventions detailed below).
+
+> **Note:** Core members can push directly to a branch on the repo (following the same conventions detailed below).
 
 Pull request title and message (and PR title and description) must adhere to [conventional commits](https://www.conventionalcommits.org), this is enforced by the CI. This is a summary of the rules:
 
-* The title must begin with `feat: title`, `fix: title`, `refactor: title` or `chore: title`, etc.
-* Title should be lowercase.
-* No period at the end of the title.
+- The title must begin with `feat: title`, `fix: title`, `refactor: title` or `chore: title`, etc.
+- Title should be lowercase.
+- No period at the end of the title.
 
 The pull request body should describe _motivation_ and follow the template provided as closely as possible. Think about your code reviewers and what information they need in order to understand what you did. If it's a big commit (hopefully not), try to provide some good entry points so it will be easier to follow.
 

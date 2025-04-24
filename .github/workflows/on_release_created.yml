@@ -11,7 +11,7 @@ on:
       version:
         description: 'Version'
         required: true
-        type: string      
+        type: string
 
 jobs:
   # publish to npm with the tag "beta" if the release version contains "beta" otherwise publish with the tag "latest"
@@ -24,7 +24,7 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: 18
-          registry-url: "https://registry.npmjs.org"
+          registry-url: 'https://registry.npmjs.org'
       - name: Install yarn
         run: corepack enable
       - name: Set yarn version to latest stable
