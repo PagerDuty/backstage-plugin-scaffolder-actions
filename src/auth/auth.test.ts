@@ -89,14 +89,22 @@ describe('PagerDuty Auth', () => {
     });
 
     it('should refresh expired OAuth token', async () => {
-      // First call returns the initial token
-      mocked(fetch).mockReturnValueOnce(
-        mockedResponse(200, {
-          access_token: 'initial-token',
-          token_type: 'bearer',
-          expires_in: 86400,
-        }),
-      );
+      // First call returns the initial token, second call returns the refreshed token
+      mocked(fetch)
+        .mockReturnValueOnce(
+          mockedResponse(200, {
+            access_token: 'initial-token',
+            token_type: 'bearer',
+            expires_in: 86400, // Expires in 24 hours
+          }),
+        )
+        .mockReturnValueOnce(
+          mockedResponse(200, {
+            access_token: 'refreshed-token',
+            token_type: 'bearer',
+            expires_in: 86400,
+          }),
+        );
 
       jest.setSystemTime(new Date(2025, 3, 9, 12, 0, 0)); // April 9, 2025 12:00:00
 
@@ -111,16 +119,7 @@ describe('PagerDuty Auth', () => {
       expect(fetch).toHaveBeenCalledTimes(1);
 
       // Advance time past token expiry
-      jest.setSystemTime(new Date(2025, 3, 10, 13, 0, 0)); // April 10, 2025 13:00:00
-
-      // Second call returns the refreshed token
-      mocked(fetch).mockReturnValueOnce(
-        mockedResponse(200, {
-          access_token: 'refreshed-token',
-          token_type: 'bearer',
-          expires_in: 86400,
-        }),
-      );
+      jest.setSystemTime(new Date(2025, 3, 10, 13, 0, 0)); // April 10, 2025 13:00:00 (> 24 hours later)
 
       const refreshedToken = await getAuthToken();
       expect(refreshedToken).toEqual('Bearer refreshed-token');
